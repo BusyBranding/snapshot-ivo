@@ -449,7 +449,7 @@ const CONFIG = {
   clientName:     'IVO Constructions',
   clientUrl:      'ivoconstructions.com.au',
   gscSiteUrl:     'sc-domain:ivoconstructions.com.au',
-  serankingSiteId: '8534786', // replace after setup
+  serankingSiteId: '8534786',
   keywords: [
     'Builder Kingscliff',
     'Builder Lennox Heads',
@@ -553,10 +553,10 @@ function renderDemo() {
 }
 
 async function loadLiveData() {
-  // SE Ranking — keyword positions
+  // SE Ranking Project API — keyword positions for this site
   const kwData = await callAPI('/api/seranking', {
-    endpoint: '/keywords/positions',
-    params: { site_id: CONFIG.serankingSiteId, depth: 30 }
+    endpoint: `/sites/${CONFIG.serankingSiteId}/keywords/`,
+    params: {}
   });
 
   // GSC — traffic
