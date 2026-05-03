@@ -810,15 +810,20 @@ function processGSCPages(data, domain) {
 }
 
 function processKeywords(data, targetKws) {
-  return targetKws.map(kw => {
-    const found = (data || []).find(k => k.keyword && k.keyword.toLowerCase() === kw.toLowerCase());
-    return {
-      kw,
-      pos: found ? found.position : '—',
-      prev: found ? (found.previous_position || found.position) : '—',
-      vol: found ? (found.search_volume || 0) : 0,
-    };
-  });
+  // If we have live data, use it directly rather than matching by name
+  if (data && Array.isArray(data) && data.length > 0) {
+    console.log('SE Ranking raw data sample:', JSON.stringify(data[0]));
+    return data.slice(0, 12).map(k => {
+      // Handle different possible field names from SE Ranking API
+      const pos = k.position || k.pos || k.rank || k.current_position || '—';
+      const prev = k.previous_position || k.prev_position || k.last_position || pos;
+      const kw = k.keyword || k.name || k.query || 'Unknown';
+      const vol = k.volume || k.search_volume || k.monthly_searches || 0;
+      return { kw, pos: typeof pos === 'number' ? pos : '—', prev: typeof prev === 'number' ? prev : '—', vol };
+    });
+  }
+  // Fall back to demo structure if no data
+  return targetKws.map(kw => ({ kw, pos: '—', prev: '—', vol: 0 }));
 }
 
 function calculateScore(traffic, keywords) {
