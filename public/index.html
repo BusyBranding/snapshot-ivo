@@ -553,37 +553,69 @@ function renderDemo() {
 }
 
 async function loadLiveData() {
-  // SE Ranking Project API — keyword positions for this site
-  const kwData = await callAPI('/api/seranking', {
-    endpoint: `/sites/${CONFIG.serankingSiteId}/keywords/`,
-    params: {}
-  });
+  let kwData = null;
+  let gscData = null;
+  let gscPages = null;
 
-  // GSC — traffic
-  const gscData = await callAPI('/api/gsc', {
-    siteUrl: CONFIG.gscSiteUrl,
-    startDate: getDateDaysAgo(period),
-    endDate: getDateDaysAgo(1),
-    dimensions: ['date'],
-    rowLimit: 500,
-  });
+  // SE Ranking — load independently so GSC failure doesn't block rankings
+  try {
+    kwData = await callAPI('/api/seranking', {
+      endpoint: `/sites/${CONFIG.serankingSiteId}/keywords/`,
+      params: {}
+    });
+  } catch(e) {
+    console.warn('SE Ranking failed:', e.message);
+  }
 
-  const gscPages = await callAPI('/api/gsc', {
-    siteUrl: CONFIG.gscSiteUrl,
-    startDate: getDateDaysAgo(period),
-    endDate: getDateDaysAgo(1),
-    dimensions: ['page'],
-    rowLimit: 10,
-  });
+  // GSC — traffic (optional, falls back to demo)
+  try {
+    gscData = await callAPI('/api/gsc', {
+      siteUrl: CONFIG.gscSiteUrl,
+      startDate: getDateDaysAgo(period),
+      endDate: getDateDaysAgo(1),
+      dimensions: ['date'],
+      rowLimit: 500,
+    });
+    gscPages = await callAPI('/api/gsc', {
+      siteUrl: CONFIG.gscSiteUrl,
+      startDate: getDateDaysAgo(period),
+      endDate: getDateDaysAgo(1),
+      dimensions: ['page'],
+      rowLimit: 10,
+    });
+  } catch(e) {
+    console.warn('GSC failed, using demo traffic:', e.message);
+  }
 
-  // Process and render
-  const traffic = processGSCTraffic(gscData);
-  renderTraffic(traffic.summary);
-  renderCharts(traffic.clicksTimeline, traffic.impressionsTimeline);
-  renderPages(processGSCPages(gscPages, CONFIG.clientUrl));
-  renderKeywords(processKeywords(kwData, CONFIG.keywords));
-  renderScore(calculateScore(traffic.summary, processKeywords(kwData, CONFIG.keywords)));
-  renderGBP(DEMO.gbp); // GBP needs OAuth — use demo until connected
+  // Render whatever we have — live where available, demo where not
+  if (gscData) {
+    const traffic = processGSCTraffic(gscData);
+    renderTraffic(traffic.summary);
+    renderCharts(traffic.clicksTimeline, traffic.impressionsTimeline);
+  } else {
+    renderTraffic(DEMO.traffic);
+    renderCharts(DEMO.clicksTimeline, DEMO.impressionsTimeline);
+  }
+
+  if (gscPages) {
+    renderPages(processGSCPages(gscPages, CONFIG.clientUrl));
+  } else {
+    renderPages(DEMO.pages);
+  }
+
+  if (kwData) {
+    const keywords = processKeywords(kwData, CONFIG.keywords);
+    renderKeywords(keywords);
+    renderScore(calculateScore(gscData ? processGSCTraffic(gscData).summary : DEMO.traffic, keywords));
+    document.getElementById('dataStatusBadge').className = 'status-badge sb-live';
+    document.getElementById('dataStatusBadge').textContent = 'Rankings live';
+    document.getElementById('dataNote').textContent = `SE Ranking live · GSC coming soon · Refreshed ${new Date().toLocaleTimeString('en-AU', {hour:'2-digit',minute:'2-digit'})}`;
+  } else {
+    renderKeywords(DEMO.keywords);
+    renderScore(DEMO.score);
+  }
+
+  renderGBP(DEMO.gbp);
 }
 
 // ── RENDER FUNCTIONS ──
