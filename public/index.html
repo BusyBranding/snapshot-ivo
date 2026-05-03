@@ -557,12 +557,36 @@ async function loadLiveData() {
   let gscData = null;
   let gscPages = null;
 
-  // SE Ranking — fetch keywords with positions
+  // SE Ranking — get keyword list, then fetch today's positions
   try {
-    kwData = await callAPI('/api/seranking', {
+    const kwList = await callAPI('/api/seranking', {
       endpoint: `/sites/${CONFIG.serankingSiteId}/keywords/`,
       params: {}
     });
+    if (kwList && kwList.length > 0) {
+      // Build comma-separated keyword IDs for the positions endpoint
+      const ids = kwList.map(k => k.id).join(',');
+      const today = new Date().toISOString().slice(0,10);
+      const positions = await callAPI('/api/seranking', {
+        endpoint: `/sites/${CONFIG.serankingSiteId}/keywords/positions/`,
+        params: { date: today }
+      });
+      console.log('positions sample:', JSON.stringify((positions||[])[0] || positions));
+      // Merge name from kwList with position from positions
+      const posMap = {};
+      const posArray = Array.isArray(positions) ? positions
+        : positions && positions.data ? positions.data : [];
+      posArray.forEach(p => { posMap[String(p.id || p.keyword_id)] = p; });
+      kwData = kwList.map(k => {
+        const p = posMap[String(k.id)] || {};
+        return {
+          kw: k.name,
+          pos: typeof p.position === 'number' ? p.position : (typeof p.pos === 'number' ? p.pos : null),
+          prev: typeof p.previous_position === 'number' ? p.previous_position : null,
+          vol: k.volume || p.volume || 0,
+        };
+      });
+    }
   } catch(e) {
     console.warn('SE Ranking failed:', e.message);
   }
@@ -811,18 +835,12 @@ function processGSCPages(data, domain) {
 
 function processKeywords(data, targetKws) {
   if (data && Array.isArray(data) && data.length > 0) {
-    return data.slice(0, 12).map(k => {
-      const pos = k.position || k.pos || k.rank || k.current_position || null;
-      const prev = k.previous_position || k.prev_position || k.last_position || null;
-      const kw = k.keyword || k.name || k.query || 'Unknown';
-      const vol = k.volume || k.search_volume || 0;
-      return {
-        kw,
-        pos: typeof pos === 'number' ? pos : '—',
-        prev: typeof prev === 'number' ? prev : '—',
-        vol
-      };
-    });
+    return data.slice(0, 12).map(k => ({
+      kw: k.kw || k.keyword || k.name || 'Unknown',
+      pos: typeof k.pos === 'number' ? k.pos : '—',
+      prev: typeof k.prev === 'number' ? k.prev : '—',
+      vol: k.vol || k.volume || 0,
+    }));
   }
   return targetKws.map(kw => ({ kw, pos: '—', prev: '—', vol: 0 }));
 }
