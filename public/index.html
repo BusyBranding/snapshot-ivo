@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Snapshot — IVO Constructions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:        #0f0f0f;
+  --bg2:       #161616;
+  --surface:   #1c1c1c;
+  --surface2:  #242424;
+  --line:      rgba(255,255,255,0.07);
+  --line2:     rgba(255,255,255,0.13);
+  --text:      #f0ede8;
+  --text2:     #888580;
+  --text3:     #4a4845;
+  --gold:      #d4a94a;
+  --gold-dim:  rgba(212,169,74,0.12);
+  --gold-glow: rgba(212,169,74,0.20);
+  --green:     #4caf7d;
+  --green-dim: rgba(76,175,125,0.12);
+  --red:       #e05555;
+  --red-dim:   rgba(224,85,85,0.12);
+  --blue:      #5b8def;
+  --blue-dim:  rgba(91,141,239,0.12);
+  --neutral:   #888580;
+  --r:         12px;
+  --r-sm:      7px;
+  --mono:      'DM Mono', monospace;
+  --sans:      'DM Sans', sans-serif;
+  --display:   'Bebas Neue', sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--sans);background:var(--bg);color:var(--text);
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+
+/* ── LAYOUT ── */
+.page{max-width:1200px;margin:0 auto;padding:0 24px 60px;}
+
+/* ── HEADER ── */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:28px 0 0;border-bottom:1px solid var(--line);padding-bottom:24px;
+  gap:20px;flex-wrap:wrap;
+}
+.header-left{display:flex;align-items:center;gap:20px;}
+.client-logo{
+  height:40px;width:auto;filter:brightness(0) invert(1);opacity:.9;
+}
+.header-divider{width:1px;height:32px;background:var(--line2);}
+.snapshot-badge{
+  font-family:var(--display);font-size:22px;letter-spacing:.06em;
+  color:var(--gold);line-height:1;
+}
+.snapshot-by{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px;letter-spacing:.08em;}
+.header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.report-date{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.period-select{
+  font-size:12px;font-family:var(--sans);font-weight:500;
+  padding:6px 14px;border:1px solid var(--line2);border-radius:999px;
+  background:var(--surface);color:var(--text2);cursor:pointer;outline:none;
+  appearance:none;-webkit-appearance:none;transition:all .2s;
+}
+.period-select:hover{border-color:var(--gold);color:var(--gold);}
+.refresh-btn{
+  font-size:12px;font-weight:600;padding:6px 18px;
+  border:1px solid var(--gold);border-radius:999px;
+  background:var(--gold-dim);color:var(--gold);cursor:pointer;
+  font-family:var(--sans);transition:all .2s;
+}
+.refresh-btn:hover{background:var(--gold);color:var(--bg);}
+.refresh-btn.loading{opacity:.5;pointer-events:none;}
+
+/* ── SECTION ── */
+.section{margin-top:36px;}
+.section-header{
+  display:flex;align-items:baseline;justify-content:space-between;
+  margin-bottom:16px;
+}
+.section-title{
+  font-family:var(--display);font-size:20px;letter-spacing:.06em;
+  color:var(--text);
+}
+.section-sub{font-size:11px;color:var(--text3);font-family:var(--mono);}
+
+/* ── SCORE HERO ── */
+.score-hero{
+  background:linear-gradient(135deg,var(--surface) 0%,var(--surface2) 100%);
+  border:1px solid var(--line2);border-radius:var(--r);
+  padding:32px;display:flex;align-items:center;gap:40px;
+  position:relative;overflow:hidden;
+}
+.score-hero::before{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:220px;height:220px;
+  background:radial-gradient(circle,var(--gold-glow) 0%,transparent 70%);
+  pointer-events:none;
+}
+.score-ring{flex-shrink:0;}
+.score-ring svg{width:110px;height:110px;}
+.score-track{fill:none;stroke:var(--line2);stroke-width:8;}
+.score-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s ease;}
+.score-text{font-family:var(--display);font-size:32px;fill:var(--text);dominant-baseline:middle;text-anchor:middle;}
+.score-label-svg{font-size:9px;fill:var(--text3);font-family:var(--mono);dominant-baseline:middle;text-anchor:middle;letter-spacing:.06em;}
+.score-details{flex:1;}
+.score-name{font-family:var(--display);font-size:28px;letter-spacing:.04em;color:var(--text);line-height:1;margin-bottom:4px;}
+.score-tagline{font-size:12px;color:var(--text2);margin-bottom:16px;}
+.score-pills{display:flex;gap:8px;flex-wrap:wrap;}
+.score-pill{
+  font-size:10px;font-weight:500;padding:4px 12px;border-radius:999px;
+  font-family:var(--mono);letter-spacing:.03em;
+}
+.pill-up{background:var(--green-dim);color:var(--green);}
+.pill-down{background:var(--red-dim);color:var(--red);}
+.pill-neutral{background:var(--surface2);color:var(--text2);}
+.pill-gold{background:var(--gold-dim);color:var(--gold);}
+
+/* ── GRID ── */
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr);}.grid-3{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){.grid-4,.grid-3,.grid-2{grid-template-columns:1fr;}}
+
+/* ── METRIC CARD ── */
+.metric{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px;position:relative;overflow:hidden;transition:border-color .2s;
+}
+.metric:hover{border-color:var(--line2);}
+.metric-label{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);font-family:var(--mono);margin-bottom:10px;}
+.metric-val{font-size:32px;font-weight:300;letter-spacing:-0.04em;color:var(--text);line-height:1;font-family:var(--mono);}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:6px;font-family:var(--mono);}
+.metric-delta{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:10px;font-weight:600;font-family:var(--mono);
+  padding:2px 8px;border-radius:999px;margin-top:8px;
+}
+.delta-up{background:var(--green-dim);color:var(--green);}
+.delta-down{background:var(--red-dim);color:var(--red);}
+.delta-flat{background:var(--surface2);color:var(--text3);}
+.metric-accent{border-left:2px solid var(--gold);}
+
+/* ── KEYWORD TABLE ── */
+.kw-table{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  overflow:hidden;
+}
+.kw-table-header{
+  display:grid;grid-template-columns:1fr 80px 80px 80px 100px;
+  padding:10px 20px;border-bottom:1px solid var(--line);
+  font-size:9px;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--text3);font-family:var(--mono);gap:8px;
+}
+.kw-row{
+  display:grid;grid-template-columns:1fr 80px 80px 80px 100px;
+  padding:13px 20px;border-bottom:1px solid var(--line);
+  gap:8px;align-items:center;transition:background .15s;
+}
+.kw-row:last-child{border-bottom:none;}
+.kw-row:hover{background:var(--surface2);}
+.kw-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.kw-pos{font-size:15px;font-weight:400;font-family:var(--mono);color:var(--text);text-align:center;}
+.kw-pos.top3{color:var(--gold);}
+.kw-pos.top10{color:var(--green);}
+.kw-pos.top20{color:var(--text);}
+.kw-pos.below{color:var(--text3);}
+.kw-move{font-size:11px;font-family:var(--mono);text-align:center;}
+.kw-move.up{color:var(--green);}
+.kw-move.down{color:var(--red);}
+.kw-move.flat{color:var(--text3);}
+.kw-vol{font-size:11px;color:var(--text2);text-align:center;font-family:var(--mono);}
+.kw-bar-wrap{background:var(--bg2);border-radius:4px;height:4px;overflow:hidden;}
+.kw-bar{height:100%;border-radius:4px;background:var(--gold);transition:width .8s ease;}
+
+/* ── MINI CHART ── */
+.chart-wrap{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px;
+}
+.chart-title{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);font-family:var(--mono);margin-bottom:16px;}
+.chart-main-val{font-size:28px;font-weight:300;font-family:var(--mono);color:var(--text);letter-spacing:-0.03em;margin-bottom:4px;}
+canvas{width:100%!important;display:block;}
+
+/* ── GBP CARD ── */
+.gbp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+@media(max-width:600px){.gbp-grid{grid-template-columns:1fr;}}
+.gbp-card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px;text-align:center;
+}
+.gbp-icon{font-size:24px;margin-bottom:10px;}
+.gbp-val{font-size:30px;font-weight:300;font-family:var(--mono);color:var(--text);letter-spacing:-0.04em;}
+.gbp-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-family:var(--mono);margin-top:6px;}
+.gbp-delta{font-size:11px;font-family:var(--mono);margin-top:6px;}
+
+/* ── TOP PAGES ── */
+.pages-list{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+}
+.page-row{
+  display:grid;grid-template-columns:1fr 70px 70px 70px;
+  padding:12px 20px;border-bottom:1px solid var(--line);gap:8px;align-items:center;
+}
+.page-row:last-child{border-bottom:none;}
+.page-row.header-row{
+  font-size:9px;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--text3);font-family:var(--mono);background:transparent;
+}
+.page-url{font-size:12px;color:var(--text);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.page-num{font-size:12px;color:var(--text2);font-family:var(--mono);text-align:right;}
+.page-num.gold{color:var(--gold);}
+
+/* ── STATUS BADGE ── */
+.status-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:10px;font-family:var(--mono);font-weight:500;
+  padding:3px 10px;border-radius:999px;
+}
+.sb-live{background:var(--green-dim);color:var(--green);}
+.sb-live::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+.sb-demo{background:var(--gold-dim);color:var(--gold);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+/* ── LOADING ── */
+.loading-overlay{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:100;transition:opacity .5s;
+}
+.loading-overlay.hidden{opacity:0;pointer-events:none;}
+.loader-logo{font-family:var(--display);font-size:48px;letter-spacing:.1em;color:var(--gold);margin-bottom:16px;}
+.loader-bar{width:200px;height:2px;background:var(--line2);border-radius:1px;overflow:hidden;}
+.loader-fill{height:100%;background:var(--gold);border-radius:1px;animation:load 1.8s ease-in-out forwards;}
+@keyframes load{from{width:0}to{width:100%}}
+.loader-text{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:12px;letter-spacing:.06em;}
+
+/* ── FOOTER ── */
+.footer{
+  margin-top:48px;padding-top:24px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
+}
+.footer-brand{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.footer-brand span{color:var(--gold);}
+.data-source-note{font-size:10px;color:var(--text3);font-family:var(--mono);}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.fade-in{animation:fadeUp .4s ease both;}
+.delay-1{animation-delay:.1s;}
+.delay-2{animation-delay:.2s;}
+.delay-3{animation-delay:.3s;}
+.delay-4{animation-delay:.4s;}
+.delay-5{animation-delay:.5s;}
+</style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loader-logo">SNAPSHOT</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+  <div class="loader-text" id="loaderText">Fetching rankings...</div>
+</div>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="header fade-in">
+    <div class="header-left">
+      <img class="client-logo" src="https://lirp.cdn-website.com/985a5615/dms3rep/multi/opt/ivo_constructions_final_logo_mar_2021-1920w.png" alt="IVO Constructions" onerror="this.style.display='none';document.getElementById('clientNameFallback').style.display='block'"/>
+      <span id="clientNameFallback" style="display:none;font-family:var(--display);font-size:22px;letter-spacing:.06em;color:var(--text)">IVO CONSTRUCTIONS</span>
+      <div class="header-divider"></div>
+      <div>
+        <div class="snapshot-badge">SNAPSHOT</div>
+        <div class="snapshot-by">by Busy Branding</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="status-badge sb-demo" id="dataStatusBadge">Demo data</span>
+      <span class="report-date" id="reportDate"></span>
+      <select class="period-select" id="periodSelect" onchange="changePeriod()">
+        <option value="30">Last 30 days</option>
+        <option value="90" selected>Last 90 days</option>
+        <option value="180">Last 6 months</option>
+      </select>
+      <button class="refresh-btn" id="refreshBtn" onclick="loadData()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <!-- Score Hero -->
+  <div class="section fade-in delay-1">
+    <div class="score-hero">
+      <div class="score-ring">
+        <svg viewBox="0 0 110 110">
+          <circle class="score-track" cx="55" cy="55" r="46"/>
+          <circle class="score-fill" id="scoreArc" cx="55" cy="55" r="46"
+            stroke="#d4a94a"
+            stroke-dasharray="289"
+            stroke-dashoffset="289"
+            transform="rotate(-90 55 55)"/>
+          <text class="score-text" x="55" y="52" id="scoreVal">—</text>
+          <text class="score-label-svg" x="55" y="67">/100</text>
+        </svg>
+      </div>
+      <div class="score-details">
+        <div class="score-name">IVO CONSTRUCTIONS</div>
+        <div class="score-tagline">Builders · Gold Coast & Northern Rivers</div>
+        <div class="score-pills" id="scorePills">
+          <span class="score-pill pill-neutral">Loading data...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Traffic Overview -->
+  <div class="section fade-in delay-2">
+    <div class="section-header">
+      <div class="section-title">TRAFFIC OVERVIEW</div>
+      <div class="section-sub" id="trafficPeriodLabel">Last 90 days · Google Search Console</div>
+    </div>
+    <div class="grid-4" id="trafficGrid">
+      <div class="metric metric-accent">
+        <div class="metric-label">Total Clicks</div>
+        <div class="metric-val" id="metClicks">—</div>
+        <div class="metric-delta" id="metClicksDelta">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Impressions</div>
+        <div class="metric-val" id="metImpressions">—</div>
+        <div class="metric-delta" id="metImpressionsDelta">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Avg. CTR</div>
+        <div class="metric-val" id="metCTR">—</div>
+        <div class="metric-delta" id="metCTRDelta">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Avg. Position</div>
+        <div class="metric-val" id="metPosition">—</div>
+        <div class="metric-delta" id="metPositionDelta">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyword Rankings -->
+  <div class="section fade-in delay-2">
+    <div class="section-header">
+      <div class="section-title">KEYWORD RANKINGS</div>
+      <div class="section-sub">SE Ranking · updated weekly</div>
+    </div>
+    <div class="kw-table">
+      <div class="kw-table-header">
+        <span>Keyword</span>
+        <span style="text-align:center">Position</span>
+        <span style="text-align:center">Change</span>
+        <span style="text-align:center">Volume</span>
+        <span>Visibility</span>
+      </div>
+      <div id="kwBody"></div>
+    </div>
+  </div>
+
+  <!-- Clicks Chart + GBP -->
+  <div class="section fade-in delay-3">
+    <div class="grid-2">
+      <div class="chart-wrap">
+        <div class="chart-title">Clicks over time</div>
+        <div class="chart-main-val" id="chartMainVal">—</div>
+        <canvas id="clicksChart" height="100"></canvas>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Impressions over time</div>
+        <div class="chart-main-val" id="chartImprVal">—</div>
+        <canvas id="impressionsChart" height="100"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Google Business Profile -->
+  <div class="section fade-in delay-3">
+    <div class="section-header">
+      <div class="section-title">GOOGLE BUSINESS PROFILE</div>
+      <div class="section-sub">Local visibility · last 90 days</div>
+    </div>
+    <div class="gbp-grid">
+      <div class="gbp-card">
+        <div class="gbp-icon">📞</div>
+        <div class="gbp-val" id="gbpCalls">—</div>
+        <div class="gbp-label">Phone Calls</div>
+        <div class="gbp-delta" id="gbpCallsDelta"></div>
+      </div>
+      <div class="gbp-card">
+        <div class="gbp-icon">📍</div>
+        <div class="gbp-val" id="gbpDirections">—</div>
+        <div class="gbp-label">Direction Requests</div>
+        <div class="gbp-delta" id="gbpDirectionsDelta"></div>
+      </div>
+      <div class="gbp-card">
+        <div class="gbp-icon">👁️</div>
+        <div class="gbp-val" id="gbpViews">—</div>
+        <div class="gbp-label">Profile Views</div>
+        <div class="gbp-delta" id="gbpViewsDelta"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Pages -->
+  <div class="section fade-in delay-4">
+    <div class="section-header">
+      <div class="section-title">TOP PAGES</div>
+      <div class="section-sub">By organic clicks · Search Console</div>
+    </div>
+    <div class="pages-list">
+      <div class="page-row header-row">
+        <span>Page</span>
+        <span style="text-align:right">Clicks</span>
+        <span style="text-align:right">Impr.</span>
+        <span style="text-align:right">Pos.</span>
+      </div>
+      <div id="pagesBody"></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer fade-in delay-5">
+    <div class="footer-brand">Powered by <span>Snapshot</span> · Busy Branding</div>
+    <div class="data-source-note" id="dataNote">Demo data shown — connect APIs in settings</div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// ── CONFIG ──
+// These values are used when calling the Netlify functions.
+// In production, SE_RANKING_SITE_ID comes from your SE Ranking dashboard.
+// GSC_SITE_URL is the property URL in Search Console (e.g. sc-domain:ivoconstructions.com.au)
+const CONFIG = {
+  clientName:     'IVO Constructions',
+  clientUrl:      'ivoconstructions.com.au',
+  gscSiteUrl:     'sc-domain:ivoconstructions.com.au',
+  serankingSiteId: 'YOUR_SERANKING_SITE_ID', // replace after setup
+  keywords: [
+    'Builder Kingscliff',
+    'Builder Lennox Heads',
+    'Builder Tweed Heads',
+    'Renovations Gold Coast',
+    'Home builder Gold Coast',
+    'Kitchen renovations Gold Coast',
+    'House extensions Gold Coast',
+    'Knockdown rebuild Gold Coast',
+  ],
+};
+
+// ── DEMO DATA (shown when API keys not connected) ──
+const DEMO = {
+  score: 74,
+  traffic: {
+    clicks:       { val: 1842, delta: +18 },
+    impressions:  { val: 48300, delta: +24 },
+    ctr:          { val: 3.8, delta: +0.4 },
+    position:     { val: 14.2, delta: -1.8 }, // lower is better
+  },
+  keywords: [
+    { kw: 'Builder Kingscliff',          pos: 3,  prev: 5,  vol: 390 },
+    { kw: 'Builder Lennox Heads',        pos: 4,  prev: 4,  vol: 260 },
+    { kw: 'Builder Tweed Heads',         pos: 7,  prev: 9,  vol: 480 },
+    { kw: 'Renovations Gold Coast',      pos: 12, prev: 15, vol: 1900 },
+    { kw: 'Home builder Gold Coast',     pos: 9,  prev: 11, vol: 2400 },
+    { kw: 'Kitchen renovations Gold Coast', pos: 6, prev: 6, vol: 720 },
+    { kw: 'House extensions Gold Coast', pos: 18, prev: 22, vol: 590 },
+    { kw: 'Knockdown rebuild Gold Coast',pos: 5,  prev: 8,  vol: 320 },
+  ],
+  clicksTimeline: [38,42,35,55,61,48,52,70,65,72,80,68,75,82,78,85,90,88,95,92,98,102,108,112,118,115,122,130,128,135],
+  impressionsTimeline: [820,890,760,940,1020,880,960,1100,1050,1180,1240,1150,1280,1340,1310,1420,1480,1460,1540,1520,1600,1650,1720,1780,1830,1810,1880,1940,1920,1990],
+  gbp: {
+    calls:      { val: 84,   delta: +12 },
+    directions: { val: 156,  delta: +8  },
+    views:      { val: 4280, delta: +31 },
+  },
+  pages: [
+    { url: '/',                           clicks: 420, impressions: 9200,  pos: 8.4 },
+    { url: '/builders',                   clicks: 310, impressions: 7100,  pos: 6.2 },
+    { url: '/locations/kingscliff-builders', clicks: 248, impressions: 4800, pos: 3.8 },
+    { url: '/bathroom-renovations',       clicks: 195, impressions: 5600,  pos: 11.2 },
+    { url: '/house-extensions',           clicks: 168, impressions: 4900,  pos: 9.7 },
+    { url: '/kitchen-renovations',        clicks: 142, impressions: 4200,  pos: 7.1 },
+    { url: '/knockdown-rebuild',          clicks: 118, impressions: 3100,  pos: 5.4 },
+    { url: '/locations/builders-tweed-heads', clicks: 98, impressions: 2800, pos: 6.9 },
+  ],
+};
+
+// ── STATE ──
+let usingDemo = true;
+let period = 90;
+let clicksChart = null;
+let impressionsChart = null;
+
+// ── INIT ──
+document.getElementById('reportDate').textContent = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+
+async function loadData() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('loading');
+  btn.textContent = '↻ Loading...';
+
+  updateLoaderText('Fetching rankings...');
+
+  // Try live APIs, fall back to demo
+  const isLive = CONFIG.serankingSiteId !== 'YOUR_SERANKING_SITE_ID';
+
+  if (isLive) {
+    try {
+      updateLoaderText('Fetching SE Ranking data...');
+      await loadLiveData();
+      usingDemo = false;
+      document.getElementById('dataStatusBadge').className = 'status-badge sb-live';
+      document.getElementById('dataStatusBadge').textContent = 'Live data';
+      document.getElementById('dataNote').textContent = `Data refreshed ${new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}`;
+    } catch (e) {
+      console.warn('Live data failed, using demo:', e);
+      renderDemo();
+    }
+  } else {
+    // Simulate a brief load for demo
+    await sleep(1800);
+    renderDemo();
+  }
+
+  hideLoader();
+  btn.classList.remove('loading');
+  btn.textContent = '↻ Refresh';
+}
+
+function renderDemo() {
+  usingDemo = true;
+  renderScore(DEMO.score);
+  renderTraffic(DEMO.traffic);
+  renderKeywords(DEMO.keywords);
+  renderCharts(DEMO.clicksTimeline, DEMO.impressionsTimeline);
+  renderGBP(DEMO.gbp);
+  renderPages(DEMO.pages);
+}
+
+async function loadLiveData() {
+  // SE Ranking — keyword positions
+  const kwData = await callAPI('/api/seranking', {
+    endpoint: '/keywords/positions',
+    params: { site_id: CONFIG.serankingSiteId, depth: 30 }
+  });
+
+  // GSC — traffic
+  const gscData = await callAPI('/api/gsc', {
+    siteUrl: CONFIG.gscSiteUrl,
+    startDate: getDateDaysAgo(period),
+    endDate: getDateDaysAgo(1),
+    dimensions: ['date'],
+    rowLimit: 500,
+  });
+
+  const gscPages = await callAPI('/api/gsc', {
+    siteUrl: CONFIG.gscSiteUrl,
+    startDate: getDateDaysAgo(period),
+    endDate: getDateDaysAgo(1),
+    dimensions: ['page'],
+    rowLimit: 10,
+  });
+
+  // Process and render
+  const traffic = processGSCTraffic(gscData);
+  renderTraffic(traffic.summary);
+  renderCharts(traffic.clicksTimeline, traffic.impressionsTimeline);
+  renderPages(processGSCPages(gscPages, CONFIG.clientUrl));
+  renderKeywords(processKeywords(kwData, CONFIG.keywords));
+  renderScore(calculateScore(traffic.summary, processKeywords(kwData, CONFIG.keywords)));
+  renderGBP(DEMO.gbp); // GBP needs OAuth — use demo until connected
+}
+
+// ── RENDER FUNCTIONS ──
+function renderScore(score) {
+  document.getElementById('scoreVal').textContent = score;
+  const circumference = 289;
+  const offset = circumference - (score / 100) * circumference;
+  const arc = document.getElementById('scoreArc');
+  arc.style.strokeDashoffset = circumference;
+  setTimeout(() => { arc.style.strokeDashoffset = offset; }, 100);
+  arc.style.stroke = score >= 70 ? '#4caf7d' : score >= 50 ? '#d4a94a' : '#e05555';
+
+  document.getElementById('scorePills').innerHTML = `
+    <span class="score-pill pill-gold">SE Ranking: ${score}/100</span>
+    <span class="score-pill pill-up">↑ Rankings improving</span>
+    <span class="score-pill pill-neutral">Gold Coast · Northern Rivers</span>
+    <span class="score-pill pill-neutral">${CONFIG.keywords.length} keywords tracked</span>
+  `;
+}
+
+function renderTraffic(t) {
+  setMetric('metClicks', t.clicks.val, t.clicks.delta, false);
+  setMetric('metImpressions', t.impressions.val, t.impressions.delta, false);
+  setMetric('metCTR', t.ctr.val + '%', t.ctr.delta, false, '%');
+  setMetric('metPosition', t.position.val, t.position.delta, true); // lower is better for position
+  document.getElementById('trafficPeriodLabel').textContent = `Last ${period} days · Google Search Console`;
+}
+
+function setMetric(id, val, delta, invertDelta, suffix = '') {
+  document.getElementById(id).textContent = typeof val === 'number' ? val.toLocaleString('en-AU') + suffix : val;
+  const deltaEl = document.getElementById(id + 'Delta');
+  if (!deltaEl) return;
+  const isGood = invertDelta ? delta < 0 : delta > 0;
+  const isBad  = invertDelta ? delta > 0 : delta < 0;
+  const prefix = delta > 0 ? '↑ +' : '↓ ';
+  const cls    = isGood ? 'delta-up' : isBad ? 'delta-down' : 'delta-flat';
+  const absVal = Math.abs(delta);
+  deltaEl.className = `metric-delta ${cls}`;
+  deltaEl.textContent = `${prefix}${absVal}${suffix} vs prev period`;
+}
+
+function renderKeywords(keywords) {
+  document.getElementById('kwBody').innerHTML = keywords.map(k => {
+    const move = k.prev - k.pos; // positive = moved up
+    const posClass = k.pos <= 3 ? 'top3' : k.pos <= 10 ? 'top10' : k.pos <= 20 ? 'top20' : 'below';
+    const moveClass = move > 0 ? 'up' : move < 0 ? 'down' : 'flat';
+    const moveStr = move > 0 ? `↑ ${move}` : move < 0 ? `↓ ${Math.abs(move)}` : '—';
+    const barWidth = Math.max(5, Math.min(100, Math.round((1 - (k.pos - 1) / 50) * 100)));
+    return `<div class="kw-row">
+      <div class="kw-name">${k.kw}</div>
+      <div class="kw-pos ${posClass}">${k.pos}</div>
+      <div class="kw-move ${moveClass}">${moveStr}</div>
+      <div class="kw-vol">${k.vol >= 1000 ? (k.vol/1000).toFixed(1) + 'k' : k.vol}</div>
+      <div><div class="kw-bar-wrap"><div class="kw-bar" style="width:${barWidth}%"></div></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderCharts(clicks, impressions) {
+  document.getElementById('chartMainVal').textContent = clicks.reduce((a, b) => a + b, 0).toLocaleString('en-AU');
+  document.getElementById('chartImprVal').textContent = impressions.reduce((a, b) => a + b, 0).toLocaleString('en-AU');
+
+  const labels = clicks.map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (clicks.length - i));
+    return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+  });
+
+  const chartDefaults = {
+    tension: 0.4,
+    fill: true,
+    pointRadius: 0,
+    borderWidth: 2,
+  };
+
+  if (clicksChart) clicksChart.destroy();
+  clicksChart = new Chart(document.getElementById('clicksChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        ...chartDefaults,
+        data: clicks,
+        borderColor: '#d4a94a',
+        backgroundColor: 'rgba(212,169,74,0.08)',
+      }]
+    },
+    options: chartOptions('#d4a94a'),
+  });
+
+  if (impressionsChart) impressionsChart.destroy();
+  impressionsChart = new Chart(document.getElementById('impressionsChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        ...chartDefaults,
+        data: impressions,
+        borderColor: '#5b8def',
+        backgroundColor: 'rgba(91,141,239,0.08)',
+      }]
+    },
+    options: chartOptions('#5b8def'),
+  });
+}
+
+function chartOptions(color) {
+  return {
+    responsive: true,
+    plugins: { legend: { display: false }, tooltip: {
+      backgroundColor: '#1c1c1c',
+      borderColor: '#333',
+      borderWidth: 1,
+      titleColor: '#888',
+      bodyColor: '#f0ede8',
+      titleFont: { family: 'DM Mono', size: 10 },
+      bodyFont: { family: 'DM Mono', size: 12 },
+    }},
+    scales: {
+      x: {
+        display: true,
+        ticks: { color: '#4a4845', font: { family: 'DM Mono', size: 9 }, maxTicksLimit: 6, maxRotation: 0 },
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        border: { display: false },
+      },
+      y: {
+        display: true,
+        ticks: { color: '#4a4845', font: { family: 'DM Mono', size: 9 }, maxTicksLimit: 4 },
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        border: { display: false },
+      }
+    }
+  };
+}
+
+function renderGBP(gbp) {
+  const setGBP = (id, deltaId, val, delta) => {
+    document.getElementById(id).textContent = val.toLocaleString('en-AU');
+    const isUp = delta > 0;
+    document.getElementById(deltaId).innerHTML = `<span style="color:${isUp ? 'var(--green)' : 'var(--red)'}">${isUp ? '↑' : '↓'} ${Math.abs(delta)}% vs last period</span>`;
+  };
+  setGBP('gbpCalls', 'gbpCallsDelta', gbp.calls.val, gbp.calls.delta);
+  setGBP('gbpDirections', 'gbpDirectionsDelta', gbp.directions.val, gbp.directions.delta);
+  setGBP('gbpViews', 'gbpViewsDelta', gbp.views.val, gbp.views.delta);
+}
+
+function renderPages(pages) {
+  document.getElementById('pagesBody').innerHTML = pages.map(p => {
+    const url = p.url.replace('https://www.ivoconstructions.com.au', '').replace('https://ivoconstructions.com.au', '') || '/';
+    return `<div class="page-row">
+      <div class="page-url">${url}</div>
+      <div class="page-num gold">${p.clicks.toLocaleString('en-AU')}</div>
+      <div class="page-num">${p.impressions.toLocaleString('en-AU')}</div>
+      <div class="page-num">${p.pos.toFixed(1)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── DATA PROCESSING ──
+function processGSCTraffic(data) {
+  const rows = data.rows || [];
+  const mid = Math.floor(rows.length / 2);
+  const curr = rows.slice(mid);
+  const prev = rows.slice(0, mid);
+  const sum = arr => arr.reduce((a, r) => ({
+    clicks: a.clicks + r.clicks,
+    impressions: a.impressions + r.impressions,
+    ctr: a.ctr + r.ctr,
+    position: a.position + r.position,
+  }), { clicks: 0, impressions: 0, ctr: 0, position: 0 });
+  const c = sum(curr), p = sum(prev);
+  const n = curr.length || 1, pn = prev.length || 1;
+  return {
+    summary: {
+      clicks:      { val: c.clicks, delta: Math.round((c.clicks - p.clicks) / (p.clicks || 1) * 100) },
+      impressions: { val: c.impressions, delta: Math.round((c.impressions - p.impressions) / (p.impressions || 1) * 100) },
+      ctr:         { val: +(c.ctr / n * 100).toFixed(1), delta: +((c.ctr / n - p.ctr / pn) * 100).toFixed(1) },
+      position:    { val: +(c.position / n).toFixed(1), delta: +((c.position / n - p.position / pn)).toFixed(1) },
+    },
+    clicksTimeline: rows.map(r => r.clicks),
+    impressionsTimeline: rows.map(r => r.impressions),
+  };
+}
+
+function processGSCPages(data, domain) {
+  return (data.rows || []).slice(0, 8).map(r => ({
+    url: r.keys[0].replace(`https://${domain}`, '').replace(`https://www.${domain}`, ''),
+    clicks: r.clicks,
+    impressions: r.impressions,
+    pos: +r.position.toFixed(1),
+  }));
+}
+
+function processKeywords(data, targetKws) {
+  return targetKws.map(kw => {
+    const found = (data || []).find(k => k.keyword && k.keyword.toLowerCase() === kw.toLowerCase());
+    return {
+      kw,
+      pos: found ? found.position : '—',
+      prev: found ? (found.previous_position || found.position) : '—',
+      vol: found ? (found.search_volume || 0) : 0,
+    };
+  });
+}
+
+function calculateScore(traffic, keywords) {
+  let score = 50;
+  const top10 = keywords.filter(k => typeof k.pos === 'number' && k.pos <= 10).length;
+  score += Math.min(25, top10 * 4);
+  if (traffic.clicks.delta > 0) score += Math.min(15, traffic.clicks.delta / 5);
+  if (traffic.position.delta < 0) score += 10; // lower position = better
+  return Math.min(100, Math.round(score));
+}
+
+// ── UTILITIES ──
+async function callAPI(path, body) {
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
+}
+
+function getDateDaysAgo(days) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
+function changePeriod() {
+  period = parseInt(document.getElementById('periodSelect').value);
+  loadData();
+}
+
+function updateLoaderText(text) {
+  const el = document.getElementById('loaderText');
+  if (el) el.textContent = text;
+}
+
+function hideLoader() {
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.classList.add('hidden');
+  setTimeout(() => overlay.style.display = 'none', 500);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── START ──
+loadData();
+</script>
+</body>
+</html>

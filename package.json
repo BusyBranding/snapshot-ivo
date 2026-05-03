@@ -1,0 +1,8 @@
+{
+  "name": "snapshot-seo-dashboard",
+  "version": "1.0.0",
+  "description": "Snapshot SEO Dashboard by Busy Branding",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
