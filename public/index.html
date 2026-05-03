@@ -563,27 +563,41 @@ async function loadLiveData() {
       endpoint: `/sites/${CONFIG.serankingSiteId}/keywords/`,
       params: {}
     });
-    // Now fetch ranking stats for today
+    // Now fetch ranking stats — try keyword-level endpoint
     const today = new Date().toISOString().slice(0,10);
-    const rankData = await callAPI('/api/seranking', {
-      endpoint: `/sites/${CONFIG.serankingSiteId}/stat/`,
-      params: { date_from: today, date_to: today }
-    });
-    // Merge keyword names with their ranking positions
-    if (kwList && rankData) {
-      const rankMap = {};
-      (rankData || []).forEach(r => { if(r.keyword_id) rankMap[r.keyword_id] = r; });
-      kwData = (kwList || []).map(k => {
-        const rank = rankMap[k.id] || {};
-        return {
-          kw: k.name,
-          pos: rank.position || rank.pos || '—',
-          prev: rank.previous_position || rank.pos_diff ? (rank.position - rank.pos_diff) : '—',
-          vol: k.volume || 0,
-        };
+    let rankData = null;
+    try {
+      rankData = await callAPI('/api/seranking', {
+        endpoint: `/sites/${CONFIG.serankingSiteId}/rankings/`,
+        params: { date: today }
       });
-    }
-    console.log('SE Ranking merged data:', JSON.stringify(kwData && kwData[0]));
+    } catch(e) { console.warn('rankings/ failed:', e.message); }
+
+    console.log('Rank data type:', typeof rankData, Array.isArray(rankData) ? 'array len='+rankData.length : JSON.stringify(rankData).slice(0,200));
+
+    // Build position map from whatever structure came back
+    const rankMap = {};
+    const rankArray = Array.isArray(rankData) ? rankData
+      : rankData && Array.isArray(rankData.data) ? rankData.data
+      : rankData && Array.isArray(rankData.keywords) ? rankData.keywords
+      : [];
+    rankArray.forEach(r => {
+      const kid = r.keyword_id || r.id;
+      if (kid) rankMap[String(kid)] = r;
+    });
+
+    kwData = (kwList || []).map(k => {
+      const rank = rankMap[String(k.id)] || {};
+      const pos = rank.position || rank.pos || rank.rank || null;
+      const prev = rank.previous_position || rank.prev_pos || null;
+      return {
+        kw: k.name,
+        pos: typeof pos === 'number' ? pos : '—',
+        prev: typeof prev === 'number' ? prev : '—',
+        vol: k.volume || 0,
+      };
+    });
+    console.log('Merged kw sample:', JSON.stringify(kwData && kwData[0]));
   } catch(e) {
     console.warn('SE Ranking failed:', e.message);
   }
