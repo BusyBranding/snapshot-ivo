@@ -557,35 +557,32 @@ async function loadLiveData() {
   let gscData = null;
   let gscPages = null;
 
-  // SE Ranking — get keyword list, then fetch today's positions
+  // SE Ranking — get keywords then rankings via stat endpoint
   try {
     const kwList = await callAPI('/api/seranking', {
       endpoint: `/sites/${CONFIG.serankingSiteId}/keywords/`,
       params: {}
     });
     if (kwList && kwList.length > 0) {
-      // Build comma-separated keyword IDs for the positions endpoint
-      const ids = kwList.map(k => k.id).join(',');
+      const engineId = kwList[0].site_engine_ids && kwList[0].site_engine_ids[0];
       const today = new Date().toISOString().slice(0,10);
-      const positions = await callAPI('/api/seranking', {
-        endpoint: `/sites/${CONFIG.serankingSiteId}/keywords/positions/`,
-        params: { date: today }
+      const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+      // Use stat endpoint with engine ID
+      const stat = await callAPI('/api/seranking', {
+        endpoint: `/sites/${CONFIG.serankingSiteId}/stat/`,
+        params: engineId ? { date_from: yesterday, date_to: today, se_id: engineId } : { date_from: yesterday, date_to: today }
       });
-      console.log('positions sample:', JSON.stringify((positions||[])[0] || positions));
-      // Merge name from kwList with position from positions
+      console.log('stat sample:', JSON.stringify(Array.isArray(stat) ? stat[0] : stat).slice(0,300));
+      const statArray = Array.isArray(stat) ? stat : (stat && stat.keywords ? stat.keywords : []);
       const posMap = {};
-      const posArray = Array.isArray(positions) ? positions
-        : positions && positions.data ? positions.data : [];
-      posArray.forEach(p => { posMap[String(p.id || p.keyword_id)] = p; });
+      statArray.forEach(r => { posMap[String(r.keyword_id || r.id)] = r; });
       kwData = kwList.map(k => {
-        const p = posMap[String(k.id)] || {};
-        return {
-          kw: k.name,
-          pos: typeof p.position === 'number' ? p.position : (typeof p.pos === 'number' ? p.pos : null),
-          prev: typeof p.previous_position === 'number' ? p.previous_position : null,
-          vol: k.volume || p.volume || 0,
-        };
+        const r = posMap[String(k.id)] || {};
+        const pos = r.position !== undefined ? Number(r.position) : null;
+        const prev = r.previous_position !== undefined ? Number(r.previous_position) : null;
+        return { kw: k.name, pos: pos !== null && !isNaN(pos) ? pos : null, prev: prev !== null && !isNaN(prev) ? prev : null, vol: k.volume || 0 };
       });
+      console.log('kwData sample:', JSON.stringify(kwData[0]));
     }
   } catch(e) {
     console.warn('SE Ranking failed:', e.message);
@@ -837,8 +834,8 @@ function processKeywords(data, targetKws) {
   if (data && Array.isArray(data) && data.length > 0) {
     return data.slice(0, 12).map(k => ({
       kw: k.kw || k.keyword || k.name || 'Unknown',
-      pos: typeof k.pos === 'number' ? k.pos : '—',
-      prev: typeof k.prev === 'number' ? k.prev : '—',
+      pos: (k.pos !== null && k.pos !== undefined && typeof k.pos === 'number') ? k.pos : '—',
+      prev: (k.prev !== null && k.prev !== undefined && typeof k.prev === 'number') ? k.prev : '—',
       vol: k.vol || k.volume || 0,
     }));
   }
