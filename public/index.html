@@ -557,47 +557,12 @@ async function loadLiveData() {
   let gscData = null;
   let gscPages = null;
 
-  // SE Ranking — first get keywords, then get their rankings
+  // SE Ranking — fetch keywords with positions
   try {
-    const kwList = await callAPI('/api/seranking', {
+    kwData = await callAPI('/api/seranking', {
       endpoint: `/sites/${CONFIG.serankingSiteId}/keywords/`,
       params: {}
     });
-    // Now fetch ranking stats — try keyword-level endpoint
-    const today = new Date().toISOString().slice(0,10);
-    let rankData = null;
-    try {
-      rankData = await callAPI('/api/seranking', {
-        endpoint: `/sites/${CONFIG.serankingSiteId}/rankings/`,
-        params: { date: today }
-      });
-    } catch(e) { console.warn('rankings/ failed:', e.message); }
-
-    console.log('Rank data type:', typeof rankData, Array.isArray(rankData) ? 'array len='+rankData.length : JSON.stringify(rankData).slice(0,200));
-
-    // Build position map from whatever structure came back
-    const rankMap = {};
-    const rankArray = Array.isArray(rankData) ? rankData
-      : rankData && Array.isArray(rankData.data) ? rankData.data
-      : rankData && Array.isArray(rankData.keywords) ? rankData.keywords
-      : [];
-    rankArray.forEach(r => {
-      const kid = r.keyword_id || r.id;
-      if (kid) rankMap[String(kid)] = r;
-    });
-
-    kwData = (kwList || []).map(k => {
-      const rank = rankMap[String(k.id)] || {};
-      const pos = rank.position || rank.pos || rank.rank || null;
-      const prev = rank.previous_position || rank.prev_pos || null;
-      return {
-        kw: k.name,
-        pos: typeof pos === 'number' ? pos : '—',
-        prev: typeof prev === 'number' ? prev : '—',
-        vol: k.volume || 0,
-      };
-    });
-    console.log('Merged kw sample:', JSON.stringify(kwData && kwData[0]));
   } catch(e) {
     console.warn('SE Ranking failed:', e.message);
   }
@@ -845,9 +810,19 @@ function processGSCPages(data, domain) {
 }
 
 function processKeywords(data, targetKws) {
-  // If pre-processed live data, return directly
-  if (data && Array.isArray(data) && data.length > 0 && data[0].kw) {
-    return data.slice(0, 12);
+  if (data && Array.isArray(data) && data.length > 0) {
+    return data.slice(0, 12).map(k => {
+      const pos = k.position || k.pos || k.rank || k.current_position || null;
+      const prev = k.previous_position || k.prev_position || k.last_position || null;
+      const kw = k.keyword || k.name || k.query || 'Unknown';
+      const vol = k.volume || k.search_volume || 0;
+      return {
+        kw,
+        pos: typeof pos === 'number' ? pos : '—',
+        prev: typeof prev === 'number' ? prev : '—',
+        vol
+      };
+    });
   }
   return targetKws.map(kw => ({ kw, pos: '—', prev: '—', vol: 0 }));
 }
