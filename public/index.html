@@ -557,12 +557,33 @@ async function loadLiveData() {
   let gscData = null;
   let gscPages = null;
 
-  // SE Ranking — load independently so GSC failure doesn't block rankings
+  // SE Ranking — first get keywords, then get their rankings
   try {
-    kwData = await callAPI('/api/seranking', {
+    const kwList = await callAPI('/api/seranking', {
       endpoint: `/sites/${CONFIG.serankingSiteId}/keywords/`,
       params: {}
     });
+    // Now fetch ranking stats for today
+    const today = new Date().toISOString().slice(0,10);
+    const rankData = await callAPI('/api/seranking', {
+      endpoint: `/sites/${CONFIG.serankingSiteId}/stat/`,
+      params: { date_from: today, date_to: today }
+    });
+    // Merge keyword names with their ranking positions
+    if (kwList && rankData) {
+      const rankMap = {};
+      (rankData || []).forEach(r => { if(r.keyword_id) rankMap[r.keyword_id] = r; });
+      kwData = (kwList || []).map(k => {
+        const rank = rankMap[k.id] || {};
+        return {
+          kw: k.name,
+          pos: rank.position || rank.pos || '—',
+          prev: rank.previous_position || rank.pos_diff ? (rank.position - rank.pos_diff) : '—',
+          vol: k.volume || 0,
+        };
+      });
+    }
+    console.log('SE Ranking merged data:', JSON.stringify(kwData && kwData[0]));
   } catch(e) {
     console.warn('SE Ranking failed:', e.message);
   }
@@ -810,19 +831,10 @@ function processGSCPages(data, domain) {
 }
 
 function processKeywords(data, targetKws) {
-  // If we have live data, use it directly rather than matching by name
-  if (data && Array.isArray(data) && data.length > 0) {
-    console.log('SE Ranking raw data sample:', JSON.stringify(data[0]));
-    return data.slice(0, 12).map(k => {
-      // Handle different possible field names from SE Ranking API
-      const pos = k.position || k.pos || k.rank || k.current_position || '—';
-      const prev = k.previous_position || k.prev_position || k.last_position || pos;
-      const kw = k.keyword || k.name || k.query || 'Unknown';
-      const vol = k.volume || k.search_volume || k.monthly_searches || 0;
-      return { kw, pos: typeof pos === 'number' ? pos : '—', prev: typeof prev === 'number' ? prev : '—', vol };
-    });
+  // If pre-processed live data, return directly
+  if (data && Array.isArray(data) && data.length > 0 && data[0].kw) {
+    return data.slice(0, 12);
   }
-  // Fall back to demo structure if no data
   return targetKws.map(kw => ({ kw, pos: '—', prev: '—', vol: 0 }));
 }
 
